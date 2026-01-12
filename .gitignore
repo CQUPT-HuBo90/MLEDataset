@@ -220,7 +220,7 @@ __marimo__/
 !.pixi/config.toml
 
 split_distribution.csv
-cache
+/MLE/filename_dict.json
 
 ###    will be unbanned at the start of the match.    ###
 #/MLE/training
@@ -236,7 +236,6 @@ scripts/seed.txt
 
 /MLE/data2.txt
 /MLE/shuxing.txt
-/MLE/filename_dict.json
 
 /MLE/data
 /MLE/low-light
