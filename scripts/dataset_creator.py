@@ -1,5 +1,4 @@
 import argparse
-import json
 import shutil
 from dataclasses import dataclass, asdict
 from math import ceil, floor
@@ -245,7 +244,7 @@ def main(for_contest: bool, for_test: bool):
         if for_contest:
             drop_columns += ["model", "origin_file"]
             if split == "test":
-                drop_columns += ["mos", "light", "color", "noise", "exposure", "nature", "content_recovery"]
+                drop_columns += ["mos", "light", "color", "noise", "exposure", "nature", "content_recovery", "description"]
         data_frame = data_frame.drop(columns=drop_columns)
         output_name = "" if for_contest else "-release"
         data_frame.drop(columns=["file_name"]).to_json(ROOT_PATH / f"MLE-{split}{output_name}.json", orient="records", index=False, indent=2)
