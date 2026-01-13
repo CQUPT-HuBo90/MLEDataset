@@ -12,7 +12,8 @@ tags:
 ### Step 1: Download Datasets
 
 + Option 1: [HuggingFace](https://huggingface.co/datasets/CQUPT-HuBo90/MLEDataset)
-+ Option 2: [BaiduYun](https://pan.baidu.com)
++ Option 2: [GitHub](https://github.com/CQUPT-HuBo90/MLEDataset)
++ Option 3: [BaiduYun](https://pan.baidu.com/s/1SrULywHnR_e3W70SuAaJ-w)（提取码：xmcr）
 
 ### Step 2: Load Dataset Using huggingface
 
