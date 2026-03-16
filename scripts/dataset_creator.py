@@ -81,7 +81,7 @@ def find_by_stem(dir_path: Path, stem: str):
 
 def read_dataset_from_txt(for_contest: bool) -> list[Sample]:
     temp: dict = {}
-    with open(DATASET_PATH / "data2.txt", "r") as f:
+    with open(DATASET_PATH / "data2.txt", encoding="utf-8", mode="r") as f:
         head_skipped = False
         for line in f:
             if not head_skipped:
@@ -93,7 +93,7 @@ def read_dataset_from_txt(for_contest: bool) -> list[Sample]:
                 "description": description
             }
     datasets: list[Sample] = []
-    with open(DATASET_PATH / "shuxing.txt", "r") as f:
+    with open(DATASET_PATH / "shuxing.txt", encoding="utf-8", mode="r") as f:
         head_skipped = False
         for line in f:
             if not head_skipped:
