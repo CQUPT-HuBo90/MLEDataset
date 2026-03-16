@@ -52,18 +52,36 @@ The purpose of holding this challenge is not only to fill the gap in the current
        }
      ]
      ```
-2. Submit your evaluation result. The submitted file should be named result.json. Your model's predicted results must strictly follow the example structure below:
 
-    ```json5
-    [
-      {
-        "id":"b_1_B",
-        "mos":1.0
-      }
-    ]
-    
-    ```
-   
+2. Submit your evaluation result.
+
+   Participants should submit their evaluation results via email to **[s250331047@stu.cqupt.edu.cn](mailto:s250331047@stu.cqupt.edu.cn)**.
+
+   The submission email should follow the requirements below:
+
+   * **Email subject:** `[QoMEX 2026] Team Name`
+   * **Attachment name:** `result.json`
+
+   The `result.json` file should follow the structure below:
+
+   ```json5
+   [
+     {
+       "id": "b_1_B",
+       "mos": 1.0
+     }
+   ]
+   ```
+
+   Participants may submit their results **multiple times**. The leaderboard will be updated **once per day** in [LEADERBOARD.md](./LEADERBOARD.md), based on submissions **received before 21:00 (UTC+8)**.
+
+   Only teams **with at least one submission on that day** will be included in that day's leaderboard. For each team, **the latest submission before the cutoff time** will be used for evaluation. Updates may appear shortly after the cutoff time.
+
+   + The **first leaderboard update** will use submissions received **before March 17, 2026, 21:00 (UTC+8)**.
+   + The **final leaderboard update** will use submissions received **before March 22, 2026, 21:00 (UTC+8)**.
+
+   The **final competition results** will be determined based on the **last leaderboard update**.
+
 ## Evaluation
 
 The evaluation consists of comparing model predictions with ground truth annotations. Spearman Rank-order Correlation Coefficient (SRCC) and Pearson Linear Correlation Coefficient (PLCC) are the key indicators for ranking the performance of the models. The final ranking will be based on the average value of the two. Under the same numerical conditions, SRCC takes precedence.

@@ -222,13 +222,15 @@ __marimo__/
 split_distribution.csv
 /MLE/filename_dict.json
 
+/submissions
+
 ###    will be unbanned at the start of the match.    ###
 #/MLE/training
 ###    will be unbanned at the start of the match.    ###
 
 ###    will be unblocked when you begin submitting your scores.    ###
-MLE-test.json
-/MLE/test
+#MLE-test.json
+#/MLE/test
 ###    will be unblocked when you begin submitting your scores.    ###
 
 ###    will be unbanned after the match.    ###
