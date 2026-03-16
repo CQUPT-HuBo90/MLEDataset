@@ -13,6 +13,8 @@ rename_action = {cmd = ["python", "./scripts/dataset_renamer.py"]}
 rename_restore = {cmd = ["python", "./scripts/dataset_renamer.py", "--restore"]}
 check_imgs = {cmd = ["python", "./scripts/check_imgs.py"]}
 
+leaderboard = {cmd = ["python", "./scripts/leaderboard.py", "--config", "args.imtp.json"]}
+
 huggingface_login = {cmd = ["huggingface-cli", "login"]}
 huggingface_whoami = {cmd = ["huggingface-cli", "whoami"]}
 huggingface_logout = {cmd = ["huggingface-cli", "logout"]}
@@ -31,4 +33,7 @@ pyarrow = ">=22.0.0, <23"
 huggingface-hub = ">=0.33.4,<0.34"
 datasets = {extras = ["vision"], version = ">=4.0.0,<4.1"}
 pillow = ">=12.1.0, <13"
+numpy = ">=2.4.3, <3"
+scipy = ">=1.17.1, <2"
+scipy-stubs = ">=1.17.1.2, <2"
 
