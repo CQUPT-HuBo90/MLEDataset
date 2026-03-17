@@ -175,10 +175,17 @@ def output(records: list[Record], time: datetime, path: Path):
 
 
 def origin_mos() -> dict[str, float]:
-    origin_mos_data = read_json(ROOT_PATH / 'MLE-test-release.json')
     filename_dict = read_json(DATASET_FILENAME_DICT_PATH)
+    # origin: mask
     filename_dict = {r.split(".")[0]: filename_dict[r].split(".")[0] for r in filename_dict}
-    return {filename_dict[r["id"]]: float(r["mos"]) for r in origin_mos_data}
+
+    origin_mos_data = read_json(ROOT_PATH / 'MLE-test-release.json')
+    # origin: mos
+    origin_mos_data = {filename_dict[r["id"]]: float(r["mos"]) for r in origin_mos_data}
+
+    # mask: mos
+    contest_test = read_json(ROOT_PATH / 'MLE-test.json')
+    return {r["id"]: origin_mos_data[r["id"]] for r in contest_test}
 
 
 def main(
