@@ -163,16 +163,37 @@ def collect_submissions(mails: list[EmailMessage], today: datetime) -> list[Subm
 def output(records: list[Record], time: datetime, path: Path):
     records.sort(key=lambda r: (-r.avg, -r.srcc, r.plcc, r.submit_time))
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        f.write(f"# Leaderboard\n")
-        f.write("\n")
-        f.write(f"Update: {time.strftime('%Y-%m-%d %H:%M %z')}\n")
-        f.write("\n")
-        f.write("| Rank | Team Name | Avg | SRCC | PLCC | Submit Time |\n")
-        f.write("|------|-----------|-----|------|------|-------------|\n")
-        for i, record in enumerate(records, 1):
-            f.write(f"| {i} | {record.team_name} | {record.avg:.4f} | {record.srcc:.4f} | {record.plcc:.4f} | {record.submit_time.strftime('%Y-%m-%d %H:%M %z')} |\n")
 
+    headers = ["Rank", "Team Name", "Avg", "SRCC", "PLCC", "Submit Time"]
+
+    rows = []
+    for i, r in enumerate(records, 1):
+        rows.append([
+            str(i),
+            r.team_name,
+            f"{r.avg:.4f}",
+            f"{r.srcc:.4f}",
+            f"{r.plcc:.4f}",
+            r.submit_time.strftime('%Y-%m-%d %H:%M %z')
+        ])
+
+    col_widths = [
+        max(len(headers[i]), max(len(row[i]) for row in rows))
+        for i in range(len(headers))
+    ]
+
+    def format_row(row):
+        return "| " + " | ".join(
+            row[i].ljust(col_widths[i]) for i in range(len(row))
+        ) + " |"
+
+    with path.open("w", encoding="utf-8") as f:
+        f.write("# Leaderboard\n\n")
+        f.write(f"Update: {time.strftime('%Y-%m-%d %H:%M %z')}\n\n")
+        f.write(format_row(headers) + "\n")
+        f.write("|" + "|".join("-" * (w + 2) for w in col_widths) + "|\n")
+        for row in rows:
+            f.write(format_row(row) + "\n")
 
 def origin_mos() -> dict[str, float]:
     filename_dict = read_json(DATASET_FILENAME_DICT_PATH)
