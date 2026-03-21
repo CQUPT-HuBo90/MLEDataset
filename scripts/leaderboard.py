@@ -161,7 +161,7 @@ def collect_submissions(mails: list[EmailMessage], today: datetime) -> list[Subm
 
 
 def output(records: list[Record], time: datetime, path: Path):
-    records.sort(key=lambda r: (-r.avg, -r.srcc, r.plcc, r.submit_time))
+    records.sort(key=lambda r: (-r.avg, -r.srcc, -r.plcc, r.submit_time))
     path.parent.mkdir(parents=True, exist_ok=True)
 
     headers = ["Rank", "Team Name", "Avg", "SRCC", "PLCC", "Submit Time"]
@@ -171,9 +171,9 @@ def output(records: list[Record], time: datetime, path: Path):
         rows.append([
             str(i),
             r.team_name,
-            f"{r.avg:.4f}",
-            f"{r.srcc:.4f}",
-            f"{r.plcc:.4f}",
+            f"{r.avg:.6f}",
+            f"{r.srcc:.6f}",
+            f"{r.plcc:.6f}",
             r.submit_time.strftime('%Y-%m-%d %H:%M %z')
         ])
 
