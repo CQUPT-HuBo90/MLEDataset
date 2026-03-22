@@ -82,6 +82,20 @@ The purpose of holding this challenge is not only to fill the gap in the current
 
    The **final competition results** will be determined based on the **last leaderboard update**.
 
+3. Final Code Submission.
+
+   Qualified teams are required to submit their code within 3 days.
+
+   + **Required**: Inference code + instructions
+   
+     The code must generate the results from the provided method or pipeline, should not contain hardcoded outputs, and should be runnable with the provided instructions.
+   + Optional: Training code
+
+   We will verify whether the outputs are reproducible by running the provided code.
+
+   + Submission link: [\[QoMEX 2026\] Final Code Submission](https://docs.google.com/forms/d/e/1FAIpQLSeLbSeyUx43EUjoAhydeDtrh9ooZGfJlBwuyGMwWAuv_FUMeA/viewform?usp=header)
+   + Deadline: March 25, 2026, 23:59 (UTC+8)
+
 ## Evaluation
 
 The evaluation consists of comparing model predictions with ground truth annotations. Spearman Rank-order Correlation Coefficient (SRCC) and Pearson Linear Correlation Coefficient (PLCC) are the key indicators for ranking the performance of the models. The final ranking will be based on the average value of the two. Under the same numerical conditions, SRCC takes precedence.
