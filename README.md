@@ -86,15 +86,22 @@ The purpose of holding this challenge is not only to fill the gap in the current
 
    Qualified teams are required to submit their code within 3 days.
 
-   + **Required**: Inference code + instructions
-   
-     The code must generate the results from the provided method or pipeline, should not contain hardcoded outputs, and should be runnable with the provided instructions.
+   + **Required**: Inference code, model weights, and instructions
+
+     The code must generate the results using the provided model, must not contain hardcoded outputs, and must be runnable with the provided instructions.
+
    + Optional: Training code
 
    We will verify whether the outputs are reproducible by running the provided code.
 
-   + Submission link: [\[QoMEX 2026\] Final Code Submission](https://docs.google.com/forms/d/e/1FAIpQLSeLbSeyUx43EUjoAhydeDtrh9ooZGfJlBwuyGMwWAuv_FUMeA/viewform?usp=header)
-   + Deadline: March 25, 2026, 23:59 (UTC+8)
+   + Submission link: [\[QoMEX 2026\] Final Code Submission](https://forms.gle/6DkD7gJarjYT5b8x7)
+   + Deadline: ~~March 25, 2026, 23:59 (UTC+8)~~ March 29, 2026, 23:00 (UTC+8)
+
+   > We have observed that a number of teams have not submitted their code. As code submission is required for result verification and reproducibility, entries without corresponding code will be considered invalid.
+   > 
+   > To ensure fairness and allow all teams to complete this requirement, we have extended the code submission deadline. This additional period is intended solely for verification purposes and does not affect the previously submitted results.
+
+   Submissions will undergo numerical consistency verification. Small discrepancies are allowed to account for reasonable numerical differences (e.g., due to precision limits or floating-point computations). Submissions that fail to meet the consistency criteria will be deemed invalid.
 
 ## Evaluation
 
