@@ -1,0 +1,37 @@
+[workspace]
+authors = ["Busymen"]
+channels = ["conda-forge", "nvidia"]
+name = "Busymen"
+platforms = ["linux-64", "win-64"]
+version = "0.1.0"
+
+[tasks]
+test = { cmd = ["python", "inf.py"] }
+
+[dependencies]
+python = "3.10.*"
+pixi-pycharm = ">=0.0.10,<0.0.11"
+
+[pypi-dependencies]
+numpy = ">=1.19.2,<2"
+opencv-python-headless = ">=4.5.0"
+ftfy = ">=6.2.3, <7"
+regex = ">=2024.11.6, <2025"
+tqdm = ">=4.67.3, <5"
+
+
+[feature.cuda.dependencies]
+cuda-toolkit = ">=11.3,<11.4"
+cudnn = ">=8,<9"
+
+[feature.cuda.pypi-dependencies]
+torch = { version = ">=1.7.1, <2", index = "https://download.pytorch.org/whl/cu113" }
+torchvision = { version = ">=0.8.2", index = "https://download.pytorch.org/whl/cu113" }
+
+[feature.cpu.pypi-dependencies]
+torch = { version = ">=1.7.1, <2", index = "https://download.pytorch.org/whl/cpu" }
+torchvision = { version = ">=0.8.2", index = "https://download.pytorch.org/whl/cpu" }
+
+[environments]
+cuda = { features = ["cuda"] }
+default = { features = ["cpu"] }

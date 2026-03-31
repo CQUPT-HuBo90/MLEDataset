@@ -1,0 +1,40 @@
+[workspace]
+authors = ["SCAU_YL"]
+channels = ["nvidia", "conda-forge"]
+name = "SCAU_YL"
+platforms = ["linux-64", "win-64"]
+version = "0.1.0"
+
+[tasks]
+test = { cmd = ["python", "src/eval/eval_mle_iqa.py", "--model_path", "./ckp"] }
+
+[dependencies]
+python = "3.10.*"
+pixi-pycharm = ">=0.0.10,<0.0.11"
+
+[pypi-dependencies]
+transformers = "==4.49.0"
+peft = ">=0.18.1, <0.19"
+timm = ">=1.0.26, <2"
+einops = ">=0.8.2, <0.9"
+sentencepiece = ">=0.2.1, <0.3"
+packaging = ">=26.0, <27"
+pillow = ">=12.1.1, <13"
+tqdm = ">=4.67.3, <5"
+safetensors = ">=0.7.0, <0.8"
+
+[feature.cuda.dependencies]
+cuda-toolkit = ">=12.8,<12.9"
+cudnn = ">=9,<10"
+
+[feature.cuda.pypi-dependencies]
+torch = { version = ">=2.7.1, <2.8", index = "https://download.pytorch.org/whl/cu128" }
+torchvision = { version = ">=0.22.1, <0.23", index = "https://download.pytorch.org/whl/cu128" }
+
+[feature.cpu.pypi-dependencies]
+torch = { version = ">=2.7.1, <2.8", index = "https://download.pytorch.org/whl/cpu" }
+torchvision = { version = ">=0.22.1, <0.23", index = "https://download.pytorch.org/whl/cpu" }
+
+[environments]
+cuda = { features = ["cuda"] }
+default = { features = ["cpu"] }

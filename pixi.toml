@@ -14,6 +14,7 @@ rename_restore = {cmd = ["python", "./scripts/dataset_renamer.py", "--restore"]}
 check_imgs = {cmd = ["python", "./scripts/check_imgs.py"]}
 
 leaderboard = {cmd = ["python", "./scripts/leaderboard.py", "--config", "args.imtp.json"]}
+final_leaderboard = {cmd = ["python", "./scripts/final_leaderboard.py", "--config", "args.imtp.json"]}
 
 huggingface_login = {cmd = ["huggingface-cli", "login"]}
 huggingface_whoami = {cmd = ["huggingface-cli", "whoami"]}

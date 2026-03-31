@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from email import policy
 from email.parser import BytesParser
-from email.utils import parsedate_to_datetime
+from email.utils import parseaddr, parsedate_to_datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -27,8 +27,10 @@ class Record:
 @dataclass
 class Submission:
     team_name: str
+    mail: str
     submit_time: datetime
     results: dict[str, float]
+    raw_result: str
 
     def to_record(self, origin: dict[str, float]) -> Record:
         keys = list(origin.keys())
@@ -112,10 +114,14 @@ def fetch_mails(
     print(f"fetched {len(mails)} mails")
     return mails
 
+def parse_result(data: str) -> dict[str, float]:
+    raw = json.loads(data)
+    return {r["id"]: r["mos"] for r in raw}
+
 def collect_submissions(mails: list[EmailMessage], today: datetime) -> list[Submission]:
     print("collecting submissions")
     start = datetime.combine(today - timedelta(days=1), datetime.min.time(), today.tzinfo) + timedelta(hours=21)
-    end = datetime.combine(today, datetime.min.time(), today.tzinfo) + timedelta(hours=20, minutes=59, seconds=59)
+    end = datetime.combine(today, datetime.min.time(), today.tzinfo) + timedelta(hours=21, minutes=59, seconds=59)
 
     submissions: list[Submission] = []
 
@@ -144,14 +150,16 @@ def collect_submissions(mails: list[EmailMessage], today: datetime) -> list[Subm
                 if part.get_filename() != "result.json":
                     continue
                 data = part.get_payload(decode=True).decode("utf-8")
-                raw = json.loads(data)
 
-                results = {r["id"]: r["mos"] for r in raw}
+                results = parse_result(data)
+                _, sender_mail = parseaddr(msg.get("from", ""))
 
                 submissions.append(Submission(
                     team_name=team,
+                    mail=sender_mail,
                     submit_time=mail_time,
-                    results=results
+                    results=results,
+                    raw_result=data,
                 ))
         except Exception as e:
             print("failed to parse submission", e)
@@ -177,10 +185,10 @@ def output(records: list[Record], time: datetime, path: Path):
             r.submit_time.strftime('%Y-%m-%d %H:%M %z')
         ])
 
-    col_widths = [
-        max(len(headers[i]), max(len(row[i]) for row in rows))
-        for i in range(len(headers))
-    ]
+    col_widths = []
+    for i in range(len(headers)):
+        row_width = max((len(row[i]) for row in rows), default=0)
+        col_widths.append(max(len(headers[i]), row_width))
 
     def format_row(row):
         return "| " + " | ".join(
@@ -230,7 +238,7 @@ def main(
     print(f"submissions collected from {len(latest_submission)} teams")
     test_release: dict[str, float] = origin_mos()
     records = [latest_submission[submission].to_record(test_release) for submission in latest_submission]
-    print("outputing results")
+    print("outputing reproduction")
     output(records, now, ROOT_PATH / 'LEADERBOARD.md')
     print("finished")
 

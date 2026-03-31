@@ -13,7 +13,7 @@ DATASET_DATA_PATH = DATASET_PATH / "data"
 DATASET_TRAIN_PATH = DATASET_PATH / "train"
 DATASET_TEST_PATH = DATASET_PATH / "test"
 
-SUBMISSION_PATH = ROOT_PATH / "submissions"
+REPRODUCTION_PATH = ROOT_PATH / "reproduction"
 
 _categories = {
     "b": "building",
