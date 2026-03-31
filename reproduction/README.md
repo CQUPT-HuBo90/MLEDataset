@@ -2,8 +2,8 @@
 
 This directory stores the virtual environment configuration files used for reproducing submitted code from teams that satisfied both of the following conditions:
 
-1. They obtained a valid result submission between 21:00:00 on March 21, 2026 and 20:59:59 on March 22, 2026, Asia/Shanghai time.
-2. They submitted valid code files before 23:00 on March 29, 2026, Asia/Shanghai time.
+1. They obtained a valid result submission between 21:00:00 on March 21, 2026 (UTC+8) and 20:59:59 on March 22, 2026 (UTC+8).
+2. They submitted valid code files before 23:00 on March 29, 2026 (UTC+8).
 
 For all teams meeting the criteria above, the organizers reproduced their submitted code and archived the corresponding environment configuration files in this directory for record and reference.
 
