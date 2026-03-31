@@ -121,7 +121,7 @@ def parse_result(data: str) -> dict[str, float]:
 def collect_submissions(mails: list[EmailMessage], today: datetime) -> list[Submission]:
     print("collecting submissions")
     start = datetime.combine(today - timedelta(days=1), datetime.min.time(), today.tzinfo) + timedelta(hours=21)
-    end = datetime.combine(today, datetime.min.time(), today.tzinfo) + timedelta(hours=21, minutes=59, seconds=59)
+    end = datetime.combine(today, datetime.min.time(), today.tzinfo) + timedelta(hours=20, minutes=59, seconds=59)
 
     submissions: list[Submission] = []
 
