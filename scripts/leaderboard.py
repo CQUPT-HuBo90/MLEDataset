@@ -14,6 +14,7 @@ import numpy
 from scipy.stats import spearmanr, pearsonr
 
 from common import ROOT_PATH, read_json, DATASET_FILENAME_DICT_PATH
+from output_leaderboard import output_leaderboard
 
 
 @dataclass
@@ -167,42 +168,6 @@ def collect_submissions(mails: list[EmailMessage], today: datetime) -> list[Subm
     print(f"fetched {len(submissions)} submissions")
     return submissions
 
-
-def output(records: list[Record], time: datetime, path: Path):
-    records.sort(key=lambda r: (-r.avg, -r.srcc, -r.plcc, r.submit_time))
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    headers = ["Rank", "Team Name", "Avg", "SRCC", "PLCC", "Submit Time"]
-
-    rows = []
-    for i, r in enumerate(records, 1):
-        rows.append([
-            str(i),
-            r.team_name,
-            f"{r.avg:.6f}",
-            f"{r.srcc:.6f}",
-            f"{r.plcc:.6f}",
-            r.submit_time.strftime('%Y-%m-%d %H:%M %z')
-        ])
-
-    col_widths = []
-    for i in range(len(headers)):
-        row_width = max((len(row[i]) for row in rows), default=0)
-        col_widths.append(max(len(headers[i]), row_width))
-
-    def format_row(row):
-        return "| " + " | ".join(
-            row[i].ljust(col_widths[i]) for i in range(len(row))
-        ) + " |"
-
-    with path.open("w", encoding="utf-8") as f:
-        f.write("# Leaderboard\n\n")
-        f.write(f"Update: {time.strftime('%Y-%m-%d %H:%M %z')}\n\n")
-        f.write(format_row(headers) + "\n")
-        f.write("|" + "|".join("-" * (w + 2) for w in col_widths) + "|\n")
-        for row in rows:
-            f.write(format_row(row) + "\n")
-
 def origin_mos() -> dict[str, float]:
     filename_dict = read_json(DATASET_FILENAME_DICT_PATH)
     # origin: mask
@@ -239,7 +204,25 @@ def main(
     test_release: dict[str, float] = origin_mos()
     records = [latest_submission[submission].to_record(test_release) for submission in latest_submission]
     print("outputing reproduction")
-    output(records, now, ROOT_PATH / 'LEADERBOARD.md')
+    output_leaderboard(
+        records=records,
+        field_map={
+            "Team Name": "team_name",
+            "Avg": "avg",
+            "SRCC": "srcc",
+            "PLCC": "plcc",
+            "Submit Time": "submit_time",
+        },
+        sort_fields=[
+            ("avg", True),
+            ("srcc", True),
+            ("plcc", True),
+            ("submit_time", False),
+        ],
+        include_rank=True,
+        time=now,
+        path=ROOT_PATH / 'LEADERBOARD.md',
+    )
     print("finished")
 
 

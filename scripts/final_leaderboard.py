@@ -1,12 +1,48 @@
 import argparse
+import html
 import json
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from datetime import datetime
-from leaderboard import fetch_mails, collect_submissions, Submission, origin_mos, output, parse_result
+
+import numpy
+from scipy.stats import pearsonr, spearmanr
+
+from leaderboard import fetch_mails, collect_submissions, Submission, origin_mos, parse_result
 from common import ROOT_PATH, REPRODUCTION_PATH
+from output_leaderboard import output_leaderboard
+
+
+@dataclass
+class Score:
+    submitted: float
+    reproduced: float
+
+    def __lt__(self, other):
+        return self.submitted < other.submitted
+
+    def __gt__(self, other):
+        return self.submitted > other.submitted
+
+
+@dataclass
+class CheckedRecord:
+    team_name: str
+    avg: Score
+    srcc: Score
+    plcc: Score
+    submit_time: datetime
+    avg_err: float
+    max_err: float
+
+@dataclass
+class ReproducedRecord:
+    team_name: str
+    avg: float
+    srcc: float
+    plcc: float
 
 @dataclass
 class Reproduction:
@@ -14,33 +50,88 @@ class Reproduction:
     mail: str
     results: dict[str, float]
 
+    def to_record(self, origin: dict[str, float]) -> ReproducedRecord:
+        keys = list(origin.keys())
+        keys.sort()
+
+        preds = []
+        gts = []
+
+        for key in keys:
+            preds.append(origin[key])
+            gts.append(self.results[key])
+
+        preds = numpy.array(preds)
+        gts = numpy.array(gts)
+
+        srcc = spearmanr(preds, gts).correlation
+        plcc = pearsonr(preds, gts).statistic
+        avg = (srcc + plcc) / 2
+
+        return ReproducedRecord(
+            team_name=self.team_name,
+            avg=avg,
+            srcc=srcc,
+            plcc=plcc,
+        )
+
+
 @dataclass
 class SubmissionPair:
     reproduction: Reproduction
     submission: Submission
+    key_matched: bool = True
 
-    def check(self) -> bool:
-        print(f"[{self.submission.team_name}] checking submission")
+    def to_checked_record(self, origin: dict[str, float]) -> CheckedRecord:
+        submitted_record = self.submission.to_record(origin)
+        reproduced_record = self.reproduction.to_record(origin)
+        errors = [
+            abs(self.reproduction.results[key] - self.submission.results[key])
+            for key in self.submission.results
+        ]
+        return CheckedRecord(
+            team_name=submitted_record.team_name,
+            avg=Score(
+                submitted=submitted_record.avg,
+                reproduced=reproduced_record.avg,
+            ),
+            srcc=Score(
+                submitted=submitted_record.srcc,
+                reproduced=reproduced_record.srcc,
+            ),
+            plcc=Score(
+                submitted=submitted_record.plcc,
+                reproduced=reproduced_record.plcc,
+            ),
+            submit_time=submitted_record.submit_time,
+            avg_err=sum(errors) / len(errors),
+            max_err=max(errors),
+        )
 
-        submission_results = self.submission.results
-        reproduction_results = self.reproduction.results
-        if submission_results.keys() != reproduction_results.keys():
-            print(f"[{self.submission.team_name}] keys mismatched")
-            return False
+def submission_of(reproduction: Reproduction, submission: Submission) -> SubmissionPair:
+    submission_results = submission.results
+    reproduction_results = reproduction.results
+    if submission_results.keys() != reproduction_results.keys():
+        return SubmissionPair(
+            submission=submission,
+            reproduction=reproduction,
+            key_matched=False,
+        )
 
-        is_mismatched = False
-        for key, submission_value in submission_results.items():
-            exponent = Decimal(str(submission_value)).as_tuple().exponent
-            decimal_places = -exponent if isinstance(exponent, int) and exponent < 0 else 0
-            rounded_reproduction_value = round(reproduction_results[key], decimal_places)
-            if rounded_reproduction_value != submission_value:
-                print(f"[{self.submission.team_name}] value mismatched of '{key}', submitted: {submission_value}, reproduced: {rounded_reproduction_value}")
-                is_mismatched = True
-        if is_mismatched:
-            return False
-
-        print(f"[{self.submission.team_name}] checking submission passed")
-        return True
+    error_val = 0.0
+    max_err = -1.0
+    for key, submission_value in submission_results.items():
+        exponent = Decimal(str(submission_value)).as_tuple().exponent
+        decimal_places = -exponent if isinstance(exponent, int) and exponent < 0 else 0
+        rounded_reproduction_value = round(reproduction_results[key], decimal_places)
+        current_err = abs(rounded_reproduction_value - submission_value)
+        error_val += current_err
+        max_err = max(max_err, current_err)
+    error_val /= len(submission_results)
+    return SubmissionPair(
+        submission=submission,
+        reproduction=reproduction,
+    )
 
 def get_submits() -> dict[str, Reproduction]:
     mails = json.loads((REPRODUCTION_PATH / "mails.json").read_text(encoding="utf-8"))
@@ -54,6 +145,78 @@ def get_submits() -> dict[str, Reproduction]:
             results=results,
         )
     return reproductions
+
+def output_appendix(
+    records: list[CheckedRecord],
+    time: datetime,
+    path: Path,
+    description: str | None = None,
+):
+    sorted_records = list(records)
+
+    def format_value(value) -> str:
+        if isinstance(value, float):
+            return f"{value:.6f}"
+        if isinstance(value, datetime):
+            return value.strftime("%Y-%m-%d %H:%M %z")
+        return str(value)
+
+    sorted_records.sort(
+        key=lambda record: (
+            -record.avg.submitted,
+            -record.srcc.submitted,
+            -record.plcc.submitted,
+            record.submit_time,
+        )
+    )
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        f.write("# Appendix\n\n")
+        f.write(f"Update: {time.strftime('%Y-%m-%d %H:%M %z')}\n\n")
+        if description:
+            f.write(f"{description}\n\n")
+
+        f.write("<table>\n")
+        f.write("  <thead>\n")
+        f.write("    <tr>\n")
+        f.write('      <th rowspan="2">Rank</th>\n')
+        f.write('      <th rowspan="2">Team Name</th>\n')
+        f.write('      <th colspan="2">Avg</th>\n')
+        f.write('      <th colspan="2">SRCC</th>\n')
+        f.write('      <th colspan="2">PLCC</th>\n')
+        f.write('      <th rowspan="2">Submit Time</th>\n')
+        f.write('      <th rowspan="2">Avg Error</th>\n')
+        f.write('      <th rowspan="2">Max Error</th>\n')
+        f.write("    </tr>\n")
+        f.write("    <tr>\n")
+        f.write("      <th>Submitted</th>\n")
+        f.write("      <th>Reproduced</th>\n")
+        f.write("      <th>Submitted</th>\n")
+        f.write("      <th>Reproduced</th>\n")
+        f.write("      <th>Submitted</th>\n")
+        f.write("      <th>Reproduced</th>\n")
+        f.write("    </tr>\n")
+        f.write("  </thead>\n")
+        f.write("  <tbody>\n")
+
+        for rank, record in enumerate(sorted_records, 1):
+            f.write("    <tr>\n")
+            f.write(f"      <td>{rank}</td>\n")
+            f.write(f"      <td>{html.escape(format_value(record.team_name))}</td>\n")
+            f.write(f"      <td>{html.escape(format_value(record.avg.submitted))}</td>\n")
+            f.write(f"      <td>{html.escape(format_value(record.avg.reproduced))}</td>\n")
+            f.write(f"      <td>{html.escape(format_value(record.srcc.submitted))}</td>\n")
+            f.write(f"      <td>{html.escape(format_value(record.srcc.reproduced))}</td>\n")
+            f.write(f"      <td>{html.escape(format_value(record.plcc.submitted))}</td>\n")
+            f.write(f"      <td>{html.escape(format_value(record.plcc.reproduced))}</td>\n")
+            f.write(f"      <td>{html.escape(format_value(record.submit_time))}</td>\n")
+            f.write(f"      <td>{html.escape(format_value(record.avg_err))}</td>\n")
+            f.write(f"      <td>{html.escape(format_value(record.max_err))}</td>\n")
+            f.write("    </tr>\n")
+
+        f.write("  </tbody>\n")
+        f.write("</table>\n")
 
 def main(
     host: str,
@@ -77,7 +240,7 @@ def main(
 
     submit_teams = get_submits()
     submitted_submission = {
-        team_name: SubmissionPair(
+        team_name: submission_of(
             submission=submission,
             reproduction=submit_teams[team_name]
         )
@@ -85,21 +248,45 @@ def main(
         if team_name in submit_teams
         and submission.mail.strip().lower() == submit_teams[team_name].mail.strip().lower()
     }
+    valid_submission: list[CheckedRecord] = []
+    test_release: dict[str, float] = origin_mos()
     for team_name, submission in submitted_submission.items():
+        if not submission.key_matched:
+            print(f"[{team_name}] keys mismatched")
+            continue
         team_path = REPRODUCTION_PATH / team_name
         team_path.mkdir(parents=True, exist_ok=True)
         submitted_path = team_path / "submitted.json"
         submitted_path.write_text(submission.submission.raw_result)
-    valid_submission = [
-        submitted_submission[team_name].submission for team_name in submitted_submission
-        if submitted_submission[team_name].check()
-    ]
+        record = submitted_submission[team_name].to_checked_record(test_release)
+        valid_submission.append(record)
 
     print(f"valid submissions collected from {len(valid_submission)} teams")
-    test_release: dict[str, float] = origin_mos()
-    records = [submission.to_record(test_release) for submission in valid_submission]
-    print("outputing reproduction")
-    output(records, now, ROOT_PATH / 'LEADERBOARD.md')
+    print("outputting final leaderboard")
+    output_leaderboard(
+        records=valid_submission,
+        field_map={
+            "Team Name": "team_name",
+        },
+        sort_fields=[
+            ("avg", True),
+            ("srcc", True),
+            ("plcc", True),
+            ("submit_time", False),
+        ],
+        include_rank=True,
+        time=now,
+        path=ROOT_PATH / "LEADERBOARD.md"
+    )
+    print("outputting appendix")
+    output_appendix(
+        records=valid_submission,
+        time=now,
+        path=ROOT_PATH / "APPENDIX.md",
+        description="""
+        Reproduced results may differ slightly due to hardware/software differences and are not used for ranking.
+        """.strip()
+    )
     print("finished")
 
 
