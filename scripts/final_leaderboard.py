@@ -12,19 +12,7 @@ from scipy.stats import pearsonr, spearmanr
 
 from leaderboard import fetch_mails, collect_submissions, Submission, origin_mos, parse_result
 from common import ROOT_PATH, REPRODUCTION_PATH
-from output_leaderboard import output_leaderboard
-
-
-@dataclass
-class Score:
-    submitted: float
-    reproduced: float
-
-    def __lt__(self, other):
-        return self.submitted < other.submitted
-
-    def __gt__(self, other):
-        return self.submitted > other.submitted
+from output_leaderboard import dense_ranks, output_leaderboard, sort_records, Score
 
 
 @dataclass
@@ -151,24 +139,23 @@ def output_appendix(
     time: datetime,
     path: Path,
     description: str | None = None,
+    float_precision: int = 6,
 ):
-    sorted_records = list(records)
+    sort_fields = [
+        ("avg", True),
+        ("srcc", True),
+        ("plcc", True),
+        ("submit_time", False),
+    ]
+    sorted_records = sort_records(records, sort_fields)
+    record_ranks = dense_ranks(sorted_records, ["avg", "srcc", "plcc"], float_precision=float_precision)
 
     def format_value(value) -> str:
         if isinstance(value, float):
-            return f"{value:.6f}"
+            return f"{value:.{float_precision}f}"
         if isinstance(value, datetime):
             return value.strftime("%Y-%m-%d %H:%M %z")
         return str(value)
-
-    sorted_records.sort(
-        key=lambda record: (
-            -record.avg.submitted,
-            -record.srcc.submitted,
-            -record.plcc.submitted,
-            record.submit_time,
-        )
-    )
 
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
@@ -200,9 +187,9 @@ def output_appendix(
         f.write("  </thead>\n")
         f.write("  <tbody>\n")
 
-        for rank, record in enumerate(sorted_records, 1):
+        for index, record in enumerate(sorted_records):
             f.write("    <tr>\n")
-            f.write(f"      <td>{rank}</td>\n")
+            f.write(f"      <td>{record_ranks[index]}</td>\n")
             f.write(f"      <td>{html.escape(format_value(record.team_name))}</td>\n")
             f.write(f"      <td>{html.escape(format_value(record.avg.submitted))}</td>\n")
             f.write(f"      <td>{html.escape(format_value(record.avg.reproduced))}</td>\n")
@@ -276,7 +263,9 @@ def main(
         ],
         include_rank=True,
         time=now,
-        path=ROOT_PATH / "LEADERBOARD.md"
+        path=ROOT_PATH / "LEADERBOARD.md",
+        float_precision=6,
+        rank_fields=["avg", "srcc", "plcc"],
     )
     print("outputting appendix")
     output_appendix(
@@ -285,7 +274,8 @@ def main(
         path=ROOT_PATH / "APPENDIX.md",
         description="""
         Reproduced results may differ slightly due to hardware/software differences and are not used for ranking.
-        """.strip()
+        """.strip(),
+        float_precision=6,
     )
     print("finished")
 

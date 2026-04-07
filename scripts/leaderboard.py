@@ -222,6 +222,8 @@ def main(
         include_rank=True,
         time=now,
         path=ROOT_PATH / 'LEADERBOARD.md',
+        float_precision=6,
+        rank_fields=["avg", "srcc", "plcc"],
     )
     print("finished")
 

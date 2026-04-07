@@ -1,14 +1,62 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, TextIO
 
 
+@dataclass
+class Score:
+    submitted: float
+    reproduced: float
+
+    def __lt__(self, other):
+        return self.submitted < other.submitted
+
+    def __gt__(self, other):
+        return self.submitted > other.submitted
+
+
+
+def sort_records(records: list[Any], sort_fields: list[tuple[str, bool]]) -> list[Any]:
+    sorted_records = list(records)
+    for field_name, reverse in reversed(sort_fields):
+        sorted_records.sort(key=lambda record: getattr(record, field_name), reverse=reverse)
+    return sorted_records
+
+
+def dense_ranks(records: list[Any], rank_fields: list[str], float_precision: int = 6) -> list[int]:
+    ranks: list[int] = []
+    current_rank = 0
+    previous_key: tuple[Any, ...] | None = None
+
+    for record in records:
+        current_key = tuple(
+            _normalize_rank_value(getattr(record, field_name), float_precision)
+            for field_name in rank_fields
+        )
+        if current_key != previous_key:
+            current_rank += 1
+        previous_key = current_key
+        ranks.append(current_rank)
+
+    return ranks
+
+
+def _normalize_rank_value(value: Any, float_precision: int) -> Any:
+    if isinstance(value, float):
+        return f"{value:.{float_precision}f}"
+    elif isinstance(value, Score):
+        return _normalize_rank_value(value.submitted, float_precision)
+    return value
+
+
 class LeaderboardWriter:
-    def __init__(self, time: datetime, path: Path):
+    def __init__(self, time: datetime, path: Path, float_precision: int = 6):
         self.time = time
         self.path = path
+        self.float_precision = float_precision
         self._file: TextIO | None = None
         self._has_table = False
 
@@ -31,22 +79,31 @@ class LeaderboardWriter:
         sort_fields: list[tuple[str, bool]],
         include_rank: bool,
         description: str | None = None,
+        rank_fields: list[str] | None = None,
     ) -> None:
         if self._file is None:
             raise RuntimeError("LeaderboardWriter must be used inside a with block.")
 
-        for field_name, reverse in reversed(sort_fields):
-            records.sort(key=lambda record: getattr(record, field_name), reverse=reverse)
+        sorted_records = sort_records(records, sort_fields)
 
         headers = list(field_map.keys())
         if include_rank:
             headers = ["Rank", *headers]
 
+        record_ranks = dense_ranks(
+            sorted_records,
+            rank_fields or [field_name for field_name, _ in sort_fields],
+            float_precision=self.float_precision,
+        )
+
         rows = []
-        for i, record in enumerate(records, 1):
-            row = [self._format_value(getattr(record, field_name)) for field_name in field_map.values()]
+        for i, record in enumerate(sorted_records):
+            row = [
+                self._format_value(getattr(record, field_name), self.float_precision)
+                for field_name in field_map.values()
+            ]
             if include_rank:
-                row = [str(i), *row]
+                row = [str(record_ranks[i]), *row]
             rows.append(row)
 
         col_widths = []
@@ -67,9 +124,9 @@ class LeaderboardWriter:
             self._file.write(self._format_row(row, col_widths) + "\n")
 
     @staticmethod
-    def _format_value(value: Any) -> str:
+    def _format_value(value: Any, float_precision: int) -> str:
         if isinstance(value, float):
-            return f"{value:.6f}"
+            return f"{value:.{float_precision}f}"
         if isinstance(value, datetime):
             return value.strftime("%Y-%m-%d %H:%M %z")
         return str(value)
@@ -81,8 +138,8 @@ class LeaderboardWriter:
         ) + " |"
 
 
-def open_leaderboard(time: datetime, path: Path) -> LeaderboardWriter:
-    return LeaderboardWriter(time, path)
+def open_leaderboard(time: datetime, path: Path, float_precision: int = 6) -> LeaderboardWriter:
+    return LeaderboardWriter(time, path, float_precision=float_precision)
 
 
 def output_leaderboard(
@@ -93,6 +150,15 @@ def output_leaderboard(
     time: datetime,
     path: Path,
     description: str | None = None,
+    float_precision: int = 6,
+    rank_fields: list[str] | None = None,
 ):
-    with open_leaderboard(time, path) as writer:
-        writer.new_table(records, field_map, sort_fields, include_rank, description)
+    with open_leaderboard(time, path, float_precision=float_precision) as writer:
+        writer.new_table(
+            records,
+            field_map,
+            sort_fields,
+            include_rank,
+            description,
+            rank_fields=rank_fields,
+        )
